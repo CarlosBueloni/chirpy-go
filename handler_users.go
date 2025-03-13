@@ -18,13 +18,6 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, r *http.Request)
 		Email string `json:"email"`
 	}
 
-	type User struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
-	}
-
 	dat, err := io.ReadAll(r.Body)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't read request")
