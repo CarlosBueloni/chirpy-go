@@ -1,60 +1,58 @@
 package auth
 
 import (
-	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"testing"
 )
 
-func TestHasPassowrd(t *testing.T) {
-	cases := []struct {
-		val string
-	}{
-		{
-			val: "testdata",
-		},
-		{
-			val: "moretestdata",
-		},
-	}
-
-	for i, c := range cases {
-		t.Run(fmt.Sprintf("Test case %v", i), func(t *testing.T) {
-			hash, err := HashPassword(c.val)
-			if err != nil {
-				t.Errorf("hash failed")
-			}
-			err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(c.val))
-		})
-	}
-}
-
 func TestCheckPasswordHash(t *testing.T) {
-	cases := []struct {
-		val  string
-		hash []byte
+	password1 := "correctPass123!"
+	password2 := "anotherPass123!"
+	hash1, _ := HashPassword(password1)
+	hash2, _ := HashPassword(password2)
+
+	tests := []struct {
+		name     string
+		password string
+		hash     string
+		wantErr  bool
 	}{
 		{
-			val: "testdata",
-			hash: func() []byte {
-				hash, _ := bcrypt.GenerateFromPassword([]byte("testdata"), 10)
-				return hash
-			}(),
+			name:     "Correct password",
+			password: password1,
+			hash:     hash1,
+			wantErr:  false,
 		},
 		{
-			val: "moretestdata",
-			hash: func() []byte {
-				hash, _ := bcrypt.GenerateFromPassword([]byte("moretestdata"), 10)
-				return hash
-			}(),
+			name:     "Incorrect password",
+			password: "wrongPassword",
+			hash:     hash1,
+			wantErr:  true,
+		},
+		{
+			name:     "Password doesn't match different hash",
+			password: password1,
+			hash:     hash2,
+			wantErr:  true,
+		},
+		{
+			name:     "Empty password",
+			password: "",
+			hash:     hash2,
+			wantErr:  true,
+		},
+		{
+			name:     "Invalid hash",
+			password: password1,
+			hash:     "invalid hash",
+			wantErr:  true,
 		},
 	}
 
-	for i, c := range cases {
-		t.Run(fmt.Sprintf("Test case %v", i), func(t *testing.T) {
-			err := CheckPasswordHash(c.val, string(c.hash))
-			if err != nil {
-				t.Errorf("failed checking hash")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := CheckPasswordHash(tt.password, tt.hash)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CheckPasswordHash() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
