@@ -1,14 +1,23 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/CarlosBueloni/chirpy-go/internal/database"
+	"github.com/google/uuid"
 )
 
-func handlerValidate(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body string `json:"body"`
+		Body   string    `json:"body"`
+		UserID uuid.UUID `json:"user_id"`
+	}
+
+	type response struct {
+		Chirp
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -24,11 +33,23 @@ func handlerValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type returnVals struct {
-		Cleaned_Body string `json:"cleaned_body"`
+	new_chirp, err := cfg.dbQueries.CreateChirp(context.Background(), database.CreateChirpParams{
+		Body:   cleanText(params.Body),
+		UserID: params.UserID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
-	respondWithJSON(w, http.StatusOK, returnVals{
-		Cleaned_Body: cleanText(params.Body),
+
+	respondWithJSON(w, http.StatusCreated, response{
+		Chirp: Chirp{
+			ID:        new_chirp.ID,
+			CreatedAt: new_chirp.CreatedAt,
+			UpdatedAt: new_chirp.UpdatedAt,
+			Body:      new_chirp.Body,
+			UserID:    new_chirp.UserID,
+		},
 	})
 	return
 }

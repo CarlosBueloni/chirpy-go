@@ -1,10 +1,15 @@
 package main
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hits Reset"))
+	if cfg.platform != "dev" {
+		respondWithError(w, http.StatusForbidden, "")
+		return
+	}
+	cfg.dbQueries.DeleteUsers(context.Background())
+	return
 }
